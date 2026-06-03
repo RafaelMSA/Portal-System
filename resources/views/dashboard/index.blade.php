@@ -196,7 +196,27 @@
                 </div>
             </section>
 
-            {{-- Chatbot removed — inline assistant UI and popup were removed. --}}
+            {{-- Chatbot: compact card with popup chat interface --}}
+            <section>
+                <p class="text-xs font-medium text-crimson-600 uppercase tracking-widest mb-3">
+                    Campus Assistant
+                </p>
+
+                <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-crimson-50 flex items-center justify-center">
+                            <i class="fa-solid fa-robot text-crimson-600"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-800 mb-0.5">SFACY — Virtual Assistant</p>
+                            <p class="text-xs text-gray-500">Quick answers about enrollment, programs, and campus info.</p>
+                        </div>
+                        <div>
+                            <button onclick="openChatbot()" class="bg-crimson-600 hover:bg-crimson-700 text-white text-xs font-medium px-3 py-2 rounded">Open Chat</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </div>
     </div>
 </main>
@@ -209,7 +229,150 @@
     </div>
 </footer>
 
-{{-- Chatbot scripts and popup removed. --}}
+{{-- Chatbot popup and enhanced JS --}}
+<div id="chatbot-popup" class="hidden fixed right-5 bottom-20 z-50 w-80 max-w-full rounded-3xl border border-gray-200 bg-white shadow-2xl">
+    <div class="flex items-center justify-between rounded-t-3xl bg-crimson-600 px-4 py-3 text-white">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-robot text-sm"></i>
+            <span class="text-sm font-medium">SFACY</span>
+        </div>
+        <button onclick="closeChatbot()" class="text-white/80 hover:text-white">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+    <div id="chatbot-messages" class="h-64 overflow-y-auto px-4 py-4 space-y-3 bg-gray-50" aria-live="polite"></div>
+    <div class="border-t border-gray-200 px-4 py-3 flex gap-2">
+        <input id="chatbot-input" type="text" placeholder="Ask SFACY a question..." class="flex-1 rounded-2xl border border-gray-200 px-3 py-2 text-sm focus:outline-none" />
+        <button id="chatbot-send" class="rounded-2xl bg-crimson-600 px-4 text-xs font-semibold text-white hover:bg-crimson-700">Send</button>
+    </div>
+</div>
+
+<button onclick="openChatbot()" class="fixed right-5 bottom-5 z-40 rounded-full bg-crimson-600 p-4 text-white shadow-lg hover:bg-crimson-700" aria-label="Open chat">
+    <i class="fa-solid fa-comments"></i>
+</button>
+
+<script>
+// Enhanced chatbot script — safe output, linkify, and graceful fallbacks
+document.addEventListener('DOMContentLoaded', function () {
+    const messagesDiv = document.getElementById('chatbot-messages');
+    const input = document.getElementById('chatbot-input');
+    const sendBtn = document.getElementById('chatbot-send');
+
+    function escapeHtml(str) {
+        const d = document.createElement('div');
+        d.appendChild(document.createTextNode(str));
+        return d.innerHTML;
+    }
+
+    function linkify(text) {
+        // Simple URL -> anchor conversion
+        return text.replace(/(https?:\/\/[^\s\)]+)/g, function(url) {
+            const safe = escapeHtml(url);
+            return '<a href="' + safe + '" target="_blank" rel="noopener noreferrer">' + safe + '</a>';
+        });
+    }
+
+    function appendMessage(sender, text) {
+        if (!messagesDiv) return;
+        const wrapper = document.createElement('div');
+        wrapper.style.marginBottom = '8px';
+        wrapper.className = sender === 'Bot' ? 'text-sm text-gray-800' : 'text-sm text-right text-gray-700';
+
+        if (sender === 'Bot') {
+            // Bot message: allow simple linkified HTML but escape other content
+            const html = linkify(escapeHtml(text));
+            wrapper.innerHTML = '<strong>SFACY:</strong> ' + html;
+        } else {
+            // User message: use textContent to avoid injection
+            wrapper.textContent = (sender === 'You' ? 'You: ' : sender + ': ') + text;
+        }
+
+        messagesDiv.appendChild(wrapper);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function chatbotReply(message) {
+        if (!message) return "Hello! How can I help you?";
+        const msg = message.toLowerCase();
+        if (msg.includes('hello') || msg.includes('hi')) {
+            return "Hello! Welcome to Saint Francis Of Assisi College Bacoor Campus. I am SFACY, your virtual assistant. How can I help you?";
+        } else if (msg.includes('admission')) {
+            return "Enrollment for SY 2024-2025 is now open! You may visit our campus or apply online via https://sfac.edu.ph/. For inquiries, contact our admissions office.";
+        } else if (msg.includes('program') || msg.includes('course')) {
+            return "We offer Pre-School (Nursery, Kinder, Prep), Elementary (Grades 1-6), Junior High School (Grades 7-10), Senior High School (Grades 11-12, Academic & Technical-Vocational Tracks), and College programs (Business Administration, IT, Education, Hospitality Management, and more).";
+        } else if (msg.includes('tuition') || msg.includes('fee')) {
+            return "Tuition fees depend on the program and grade level. For details, please contact our admissions office at (046) 476-6217 or (02) 8521-0835.";
+        } else if (msg.includes('location') || msg.includes('where') || msg.includes('address')) {
+            return "Our campus is located at 96 Bayanan, City of Bacoor, Cavite.";
+        } else if (msg.includes('contact') || msg.includes('phone') || msg.includes('email')) {
+            return "You can reach us at (046) 476-6217, (02) 8521-0835, or email bacoor@sfac.edu.ph.";
+        } else if (msg.includes('requirement') || msg.includes('document')) {
+            return "Admission requirements: Birth Certificate, Report Card, Certificate of Good Moral Character, 2x2 Photo, and other relevant documents.";
+        } else if (msg.includes('website')) {
+            return "Visit our official website: https://sfac.edu.ph/";
+        } else {
+            return "Thank you for your message! If you have specific questions about our school, programs, or admissions, feel free to ask. - SFACY";
+        }
+    }
+
+    window.openChatbot = function() {
+        const popup = document.getElementById('chatbot-popup');
+        if (!popup) return;
+        popup.classList.remove('hidden');
+        // clear and greet
+        if (messagesDiv) messagesDiv.innerHTML = '';
+        appendMessage('Bot', "Hello! Welcome to Saint Francis Of Assisi College Bacoor Campus. I am SFACY, your virtual assistant. How can I help you?");
+        input && input.focus();
+    };
+
+    window.closeChatbot = function() {
+        const popup = document.getElementById('chatbot-popup');
+        if (!popup) return;
+        popup.classList.add('hidden');
+    };
+
+    if (sendBtn && input) {
+        sendBtn.addEventListener('click', function() {
+            const userMsg = input.value.trim();
+            if (!userMsg) return;
+            appendMessage('You', userMsg);
+            input.value = '';
+            // Simulate thinking and reply
+            setTimeout(function() {
+                appendMessage('Bot', chatbotReply(userMsg));
+            }, 500);
+        });
+
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') sendBtn.click();
+        });
+    }
+
+    // Simple slideshow logic for About Us section (guarded)
+    try {
+        const slides = document.querySelectorAll('.about-slide');
+        if (slides && slides.length) {
+            let currentSlide = 0;
+            function showSlide(idx) {
+                slides.forEach((img, i) => img.style.display = i === idx ? 'block' : 'none');
+            }
+            const prevBtn = document.getElementById('about-prev');
+            const nextBtn = document.getElementById('about-next');
+            prevBtn && (prevBtn.onclick = function() {
+                currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+                showSlide(currentSlide);
+            });
+            nextBtn && (nextBtn.onclick = function() {
+                currentSlide = (currentSlide + 1) % slides.length;
+                showSlide(currentSlide);
+            });
+            showSlide(currentSlide);
+        }
+    } catch (e) {
+        // if DOM elements not present, silently ignore
+    }
+});
+</script>
 
 </body>
 </html>
