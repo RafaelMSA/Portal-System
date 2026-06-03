@@ -19,7 +19,6 @@ class DashboardController extends Controller
             'announcements'  => $this->getAnnouncements(),
             'achievements'   => $this->getAchievements(),
             'accomplishments'=> $this->getAchievements(),
-            'chatbot'        => $this->getChatbotConfig(),
         ]);
     }
  
@@ -139,22 +138,6 @@ class DashboardController extends Controller
         return collect($items)->map(fn($item) => (object) $item);
     }
  
-    // ─── CHATBOT CONFIG ──────────────────────────────────────────────────────
- 
-    private function getChatbotConfig(): object
-    {
-        $config = [
-            'name'            => 'FrancisAI',
-            'label'           => 'SFAC Campus AI Assistant',
-            'model'           => 'claude-sonnet-4-20250514',
-            'max_tokens'      => 512,
-            'welcome_message' => 'Hello! I\'m FrancisAI, your SFAC campus assistant. I can help with enrollment schedules, academic deadlines, campus policies, and more. How can I assist you today?',
-            'system_prompt'   => 'You are FrancisAI, the helpful and friendly AI campus assistant for Saint Francis of Assisi College (SFAC). Answer questions about enrollment, academic policies, campus facilities, events, and general school information. Always be concise, respectful, and accurate. If you do not know something, direct the student to the Registrar\'s Office or the relevant department. Do not discuss topics outside of SFAC campus life.',
-        ];
- 
-        // In production, replace with:
-        // return \App\Models\ChatbotConfig::where('is_active', true)->first();
-        return (object) $config;
-    }
+    // Chatbot removed — inline campus assistant was deprecated and removed from the dashboard view.
 }
  
