@@ -208,7 +208,7 @@
                             <i class="fa-solid fa-robot text-crimson-600"></i>
                         </div>
                         <div class="flex-1">
-                            <p class="text-sm font-medium text-gray-800 mb-0.5">SFACY — Virtual Assistant</p>
+                            <p class="text-sm font-medium text-gray-800 mb-0.5">STACY — Virtual Assistant</p>
                             <p class="text-xs text-gray-500">Quick answers about enrollment, programs, and campus info.</p>
                         </div>
                         <div>
@@ -234,15 +234,15 @@
     <div class="flex items-center justify-between rounded-t-3xl bg-crimson-600 px-4 py-3 text-white">
         <div class="flex items-center gap-2">
             <i class="fa-solid fa-robot text-sm"></i>
-            <span class="text-sm font-medium">SFACY</span>
+            <span class="text-sm font-medium">STACY</span>
         </div>
         <button onclick="closeChatbot()" class="text-white/80 hover:text-white">
             <i class="fa-solid fa-xmark"></i>
         </button>
     </div>
-    <div id="chatbot-messages" class="h-64 overflow-y-auto px-4 py-4 space-y-3 bg-gray-50" aria-live="polite"></div>
+    <div id="chatbot-messages" class="h-64 overflow-y-auto px-4 py-4 flex flex-col gap-3 bg-gray-50" aria-live="polite"></div>
     <div class="border-t border-gray-200 px-4 py-3 flex gap-2">
-        <input id="chatbot-input" type="text" placeholder="Ask SFACY a question..." class="flex-1 rounded-2xl border border-gray-200 px-3 py-2 text-sm focus:outline-none" />
+        <input id="chatbot-input" type="text" placeholder="Ask STACY a question..." class="flex-1 rounded-2xl border border-gray-200 px-3 py-2 text-sm focus:outline-none" />
         <button id="chatbot-send" class="rounded-2xl bg-crimson-600 px-4 text-xs font-semibold text-white hover:bg-crimson-700">Send</button>
     </div>
 </div>
@@ -257,6 +257,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const messagesDiv = document.getElementById('chatbot-messages');
     const input = document.getElementById('chatbot-input');
     const sendBtn = document.getElementById('chatbot-send');
+    const CHAT_HISTORY_KEY = 'stacyChatHistory';
+    let chatHistory = [];
 
     function escapeHtml(str) {
         const d = document.createElement('div');
@@ -272,46 +274,92 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function appendMessage(sender, text) {
+    function loadChatHistory() {
+        try {
+            const raw = localStorage.getItem(CHAT_HISTORY_KEY);
+            const parsed = raw ? JSON.parse(raw) : [];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+            return [];
+        }
+    }
+
+    function saveChatHistory() {
+        localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(chatHistory));
+    }
+
+    function appendMessage(sender, text, save = true) {
         if (!messagesDiv) return;
-        const wrapper = document.createElement('div');
-        wrapper.style.marginBottom = '8px';
-        wrapper.className = sender === 'Bot' ? 'text-sm text-gray-800' : 'text-sm text-right text-gray-700';
+        const row = document.createElement('div');
+        row.className = sender === 'You' ? 'flex justify-end' : 'flex justify-start';
+
+        const bubble = document.createElement('div');
+        bubble.className = sender === 'You'
+            ? 'max-w-[80%] bg-crimson-600 text-white rounded-xl px-3 py-2 text-sm'
+            : 'max-w-[80%] bg-white text-gray-800 rounded-xl px-3 py-2 text-sm border border-gray-100';
 
         if (sender === 'Bot') {
-            // Bot message: allow simple linkified HTML but escape other content
-            const html = linkify(escapeHtml(text));
-            wrapper.innerHTML = '<strong>SFACY:</strong> ' + html;
+            bubble.innerHTML = '<strong class="sr-only">STACY:</strong> ' + linkify(escapeHtml(text));
         } else {
-            // User message: use textContent to avoid injection
-            wrapper.textContent = (sender === 'You' ? 'You: ' : sender + ': ') + text;
+            bubble.textContent = text;
         }
 
-        messagesDiv.appendChild(wrapper);
+        row.appendChild(bubble);
+        messagesDiv.appendChild(row);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        if (save) {
+            chatHistory.push({ sender, text });
+            saveChatHistory();
+        }
+    }
+
+    function renderChatHistory() {
+        if (!messagesDiv) return;
+        messagesDiv.innerHTML = '';
+        chatHistory.forEach(entry => {
+            appendMessage(entry.sender, entry.text, false);
+        });
+    }
+
+    function normalizeText(value) {
+        return (value || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9\s]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function containsAny(value, keywords) {
+        const normalizedValue = normalizeText(value);
+        return keywords.some(keyword => normalizedValue.includes(normalizeText(keyword)));
     }
 
     function chatbotReply(message) {
         if (!message) return "Hello! How can I help you?";
-        const msg = message.toLowerCase();
-        if (msg.includes('hello') || msg.includes('hi')) {
-            return "Hello! Welcome to Saint Francis Of Assisi College Bacoor Campus. I am SFACY, your virtual assistant. How can I help you?";
-        } else if (msg.includes('admission')) {
+        const msg = normalizeText(message);
+
+        if (containsAny(msg, ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening', 'greetings'])) {
+            return "Hello! Welcome to Saint Francis Of Assisi College Bacoor Campus. I am STACY, your virtual assistant. How can I help you?";
+        } else if (containsAny(msg, ['admission', 'admissions', 'enroll', 'enrollment', 'enrolment', 'register', 'registration', 'apply', 'apply now', 'application'])) {
             return "Enrollment for SY 2024-2025 is now open! You may visit our campus or apply online via https://sfac.edu.ph/. For inquiries, contact our admissions office.";
-        } else if (msg.includes('program') || msg.includes('course')) {
+        } else if (containsAny(msg, ['program', 'programs', 'course', 'courses', 'strand', 'strands', 'major', 'majors', 'degree', 'curriculum', 'subjects', 'subject'])) {
             return "We offer Pre-School (Nursery, Kinder, Prep), Elementary (Grades 1-6), Junior High School (Grades 7-10), Senior High School (Grades 11-12, Academic & Technical-Vocational Tracks), and College programs (Business Administration, IT, Education, Hospitality Management, and more).";
-        } else if (msg.includes('tuition') || msg.includes('fee')) {
+        } else if (containsAny(msg, ['tuition', 'fees', 'fee', 'payment', 'cost', 'school fee', 'semester fee', 'tuition fee', 'miscellaneous'])) {
             return "Tuition fees depend on the program and grade level. For details, please contact our admissions office at (046) 476-6217 or (02) 8521-0835.";
-        } else if (msg.includes('location') || msg.includes('where') || msg.includes('address')) {
+        } else if (containsAny(msg, ['location', 'where', 'address', 'campus', 'school location', 'site', 'building', 'school address'])) {
             return "Our campus is located at 96 Bayanan, City of Bacoor, Cavite.";
-        } else if (msg.includes('contact') || msg.includes('phone') || msg.includes('email')) {
+        } else if (containsAny(msg, ['contact', 'phone', 'telephone', 'number', 'email', 'gmail', 'hotline', 'contact us', 'reach us'])) {
             return "You can reach us at (046) 476-6217, (02) 8521-0835, or email bacoor@sfac.edu.ph.";
-        } else if (msg.includes('requirement') || msg.includes('document')) {
+        } else if (containsAny(msg, ['requirement', 'requirements', 'document', 'documents', 'papers', 'requirements for admission', 'needed requirements', 'credential', 'credentials'])) {
             return "Admission requirements: Birth Certificate, Report Card, Certificate of Good Moral Character, 2x2 Photo, and other relevant documents.";
-        } else if (msg.includes('website')) {
+        } else if (containsAny(msg, ['website', 'site', 'url', 'homepage', 'official website', 'school website'])) {
             return "Visit our official website: https://sfac.edu.ph/";
+        } else if (containsAny(msg, ['school', 'campus', 'sfac', 'college', 'saint francis', 'bacoor campus'])) {
+            return "Saint Francis of Assisi College Bacoor Campus offers elementary, junior high, senior high, and college programs with a student-centered learning environment.";
         } else {
-            return "Thank you for your message! If you have specific questions about our school, programs, or admissions, feel free to ask. - SFACY";
+            return "Thank you for your message! If you have specific questions about our school, programs, or admissions, feel free to ask. - STACY";
         }
     }
 
@@ -319,9 +367,11 @@ document.addEventListener('DOMContentLoaded', function () {
         const popup = document.getElementById('chatbot-popup');
         if (!popup) return;
         popup.classList.remove('hidden');
-        // clear and greet
-        if (messagesDiv) messagesDiv.innerHTML = '';
-        appendMessage('Bot', "Hello! Welcome to Saint Francis Of Assisi College Bacoor Campus. I am SFACY, your virtual assistant. How can I help you?");
+        if (chatHistory.length > 0) {
+            renderChatHistory();
+        } else {
+            appendMessage('Bot', "Hello! Welcome to Saint Francis Of Assisi College Bacoor Campus. I am STACY, your virtual assistant. How can I help you?");
+        }
         input && input.focus();
     };
 
@@ -347,6 +397,13 @@ document.addEventListener('DOMContentLoaded', function () {
             if (e.key === 'Enter') sendBtn.click();
         });
     }
+
+    const logoutForms = document.querySelectorAll('#logoutForm, #logout-form');
+    logoutForms.forEach(form => {
+        form.addEventListener('submit', clearChatHistory);
+    });
+
+    chatHistory = loadChatHistory();
 
     // Simple slideshow logic for About Us section (guarded)
     try {

@@ -1,0 +1,12 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^php artisan tinker --execute=\"use Illuminate\\\\Support\\\\Facades\\\\Mail; Mail::raw\\('SMTP verification from PortalSystem', function \\(\\$message\\) \\{ \\$message->to\\('portalsystem\\.office@gmail\\.com'\\)->subject\\('SMTP verification'\\); \\}\\); echo 'MAIL_TEST_SENT\\\\n';\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^php artisan announcement:process-deadlines$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
