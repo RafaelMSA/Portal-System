@@ -4,6 +4,8 @@ ENV WEBROOT=/var/www/html/public
 ENV APP_ENV=production
 ENV APP_DEBUG=false
 
+EXPOSE 80
+
 COPY . /var/www/html
 COPY conf/nginx-site.conf /etc/nginx/sites-available/default.conf
 COPY scripts/00-laravel-deploy.sh /etc/entrypoint.d/00-laravel-deploy.sh
