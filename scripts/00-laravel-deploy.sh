@@ -1,11 +1,16 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-set -e
+mkdir -p /var/run/php
+
+echo "Running composer..."
+composer install --no-dev --working-dir=/var/www/html
 
 cd /var/www/html
 
-composer install --no-dev --optimize-autoloader
+echo "Caching configuration..."
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
+
+echo "Running migrations..."
 php artisan migrate --force
