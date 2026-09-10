@@ -4,6 +4,7 @@
 .gitignore
 node_modules
 vendor
+scripts/start-portal-system.ps1
 storage/logs
 storage/framework/cache
 storage/framework/sessions

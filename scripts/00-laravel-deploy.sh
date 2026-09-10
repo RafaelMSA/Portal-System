@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 echo "Running composer..."
-composer install --no-dev --working-dir=/var/www/html
+composer install --no-dev --ignore-platform-reqs --working-dir=/var/www/html
 
 cd /var/www/html
 
