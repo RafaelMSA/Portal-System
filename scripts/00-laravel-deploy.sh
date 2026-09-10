@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-mkdir -p /var/run/php
-
 echo "Running composer..."
 composer install --no-dev --working-dir=/var/www/html
 
